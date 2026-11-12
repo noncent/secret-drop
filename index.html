@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha384-TbSZ6hLaSrmFTonJxaQfLMuRnNG1ZoP40GW8aUQ8vPRw1PppXCRSm7ShaJEub0Co'; style-src 'sha384-K2OC2oyDrCUIsI18NMkLiFsKHOsak6KG9ETCWfSPkKheShheHZhjGnOtnt7taP6f'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha384-gpr0eBftDEKWx8h7zbwk+codbAANFNeBbfT8nlzHLHfIzOQmHUzLaWmJwOZVIHLK'; style-src 'sha384-QQdfaiJqIyrB0R1KHOMQUx1ae48K619GBoh5eG5NepFt/jBE6pKAAWBNw6ciZyNr'; form-action 'none'; base-uri 'none'">
   <title>Secret Drop | Encrypted secret sharing</title>
   <style>
 :root {
@@ -25,7 +25,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; color: var(--ink); background: var(--page); }
-button, input, textarea { font: inherit; }
+button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: wait; opacity: .72; }
 a { color: inherit; text-decoration: none; }
@@ -103,10 +103,11 @@ h2 { margin: 0; font-size: clamp(28px, 2.4vw, 42px); font-weight: 755; letter-sp
 label { display: block; font-size: 14px; font-weight: 690; margin-bottom: 8px; }
 .label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 #byte-count { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
-textarea, input { width: 100%; color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 10px; }
+textarea, input, select { width: 100%; color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 10px; }
 textarea::placeholder, input::placeholder { color: #64718a; opacity: 1; }
 textarea { display: block; min-height: clamp(103px, 14vh, 155px); padding: 14px; resize: vertical; margin-bottom: 19px; font-size: 14px; line-height: 1.55; }
-input { min-width: 0; height: 47px; padding: 0 13px; font-size: 14px; }
+input, select { min-width: 0; height: 47px; padding: 0 13px; font-size: 14px; }
+select { cursor: pointer; }
 .check-field { margin-bottom: 17px; }
 .primary { width: 100%; min-height: 49px; margin-top: 19px; border: 1px solid transparent; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 750; font-size: 14px; padding: 9px 42px; position: relative; }
 .primary:hover:not(:disabled) { background: var(--accent-dark); }
@@ -118,6 +119,8 @@ input { min-width: 0; height: 47px; padding: 0 13px; font-size: 14px; }
 .error { color: #a5212d; margin: 12px 0 0; }
 .result-label { display: flex; align-items: center; gap: 7px; }
 .result-label .icon { color: var(--accent); font-size: 16px; }
+.expiry-note { display: flex; align-items: center; gap: 8px; margin: -7px 0 19px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-dark); font-size: 13px; }
+#reveal-expiry { margin: 0 0 14px; }
 .copy-row { display: flex; align-items: stretch; gap: 8px; margin-bottom: 17px; }
 .copy-row button, .text-button { border: 1px solid #d7e2ff; border-radius: 9px; color: var(--accent-dark); background: var(--accent-soft); padding-inline: 12px; white-space: nowrap; font-size: 13px; font-weight: 700; }
 .copy-row button:hover, .text-button:hover { background: #e0e9ff; }
@@ -161,6 +164,7 @@ input { min-width: 0; height: 47px; padding: 0 13px; font-size: 14px; }
     <symbol id="icon-link" viewBox="0 0 24 24"><path d="M10 13a4 4 0 0 0 6 .5l4-4a4 4 0 0 0-6-5.5l-2 2m2 5a4 4 0 0 0-6-.5l-4 4a4 4 0 0 0 6 5.5l2-2"/></symbol>
     <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
     <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
   </svg>
   <header class="site-header">
     <div class="header-inner">
@@ -205,18 +209,21 @@ input { min-width: 0; height: 47px; padding: 0 13px; font-size: 14px; }
           <p class="description">Create an encrypted link and a separate key.</p>
           <div class="label-row"><label for="secret">Your secret</label><span id="byte-count">0 / 1,024 bytes</span></div>
           <textarea id="secret" placeholder="Paste a password, API key or private note…" spellcheck="false" autocapitalize="off" aria-describedby="byte-count" required></textarea>
+          <label class="result-label" for="expiry-duration"><svg class="icon" aria-hidden="true"><use href="#icon-clock"/></svg> Portal expiry</label>
+          <select id="expiry-duration"><option value="10">10 minutes</option><option value="60" selected>1 hour</option><option value="1440">24 hours</option></select>
           <button class="primary" type="submit">Encrypt and create link <svg class="icon button-icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
           <p class="error" id="send-error" role="alert" hidden></p>
         </form>
         <div id="send-result" hidden>
           <h2>Secret ready to share</h2>
           <p class="description">Your recipient needs both the link and the key.</p>
+          <p class="expiry-note"><svg class="icon" aria-hidden="true"><use href="#icon-clock"/></svg><span id="share-expiry"></span></p>
           <label class="result-label" for="share-link"><svg class="icon" aria-hidden="true"><use href="#icon-link"/></svg> Encrypted link</label>
           <div class="copy-row link-row"><input id="share-link" aria-describedby="share-link-note" readonly><button type="button" data-copy="share-link" aria-label="Copy encrypted link"><svg class="icon" aria-hidden="true"><use href="#icon-copy"/></svg><span>Copy link</span></button></div>
           <p class="hint share-note" id="share-link-note">Send this link to your recipient.</p>
           <label class="result-label" for="share-key"><svg class="icon" aria-hidden="true"><use href="#icon-key"/></svg> Secret key</label>
           <div class="copy-row"><input id="share-key" type="password" autocomplete="off" aria-describedby="share-key-note" readonly><button type="button" id="toggle-share-key" aria-label="Show secret key" aria-controls="share-key">Show</button><button type="button" data-copy="share-key" aria-label="Copy secret key"><svg class="icon" aria-hidden="true"><use href="#icon-copy"/></svg><span>Copy key</span></button></div>
-          <p class="hint" id="share-key-note">Send the key through a separate channel. Anyone with both can reopen the secret.</p>
+          <p class="hint" id="share-key-note">Send the key through a separate channel.</p>
           <button type="button" class="primary" id="reset-send">Create another secret <svg class="icon button-icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
         </div>
       </div>
@@ -237,6 +244,7 @@ input { min-width: 0; height: 47px; padding: 0 13px; font-size: 14px; }
         <div id="check-result" hidden>
           <h2>Secret revealed</h2>
           <p class="description">Copy the secret or close this view to clear it.</p>
+          <p class="hint" id="reveal-expiry" hidden></p>
           <label for="revealed">Your secret</label>
           <textarea id="revealed" readonly spellcheck="false"></textarea>
           <button type="button" class="primary" data-copy="revealed">Copy secret</button>
@@ -249,7 +257,7 @@ input { min-width: 0; height: 47px; padding: 0 13px; font-size: 14px; }
     </section>
   </main>
 
-  <footer class="site-footer">Links can be reopened by anyone who has the matching key.</footer>
+  <footer class="site-footer">Expiry uses your device clock and applies only in this portal. Keep the link and key separate.</footer>
 <script>
 'use strict';
 
@@ -258,9 +266,13 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 const byteLimit = 1024;
 const tagBytes = 16;
-const fragmentPrefix = '#sd1.';
+const deadlineBytes = 8;
+const legacyPrefix = '#sd1.';
+const fragmentPrefix = '#sd2.';
 const base64url = /^[A-Za-z0-9_-]+$/;
-const maxFragmentLength = fragmentPrefix.length + 17 + Math.ceil((byteLimit + tagBytes) * 4 / 3);
+const maxFragmentLength = fragmentPrefix.length + 14 + 17 + Math.ceil((byteLimit + deadlineBytes + tagBytes) * 4 / 3);
+const durations = new Set([10, 60, 1440]);
+const expiryFormat = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' });
 const tabs = [$('send-tab'), $('check-tab')];
 const sendForm = $('send-form');
 const checkForm = $('check-form');
@@ -287,6 +299,18 @@ function browserCrypto() {
   return crypto;
 }
 
+function encryptionParams(iv, expiresAt) {
+  return expiresAt === null ? { name: 'AES-GCM', iv } : {
+    name: 'AES-GCM', iv, additionalData: encoder.encode('secret-drop/v2:' + expiresAt),
+  };
+}
+
+function checkExpiry(expiresAt) {
+  if (expiresAt !== null && Date.now() >= expiresAt) {
+    throw new Error('This link has expired in the portal. Ask the sender for a new link.');
+  }
+}
+
 function readLink(value) {
   try {
     const input = value.trim();
@@ -294,10 +318,20 @@ function readLink(value) {
     const url = input.startsWith('#') ? null : new URL(input);
     if (url && (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)) throw new Error('Unsupported URL.');
     const fragment = url ? url.hash : input;
-    if (!fragment.startsWith(fragmentPrefix) || fragment.length > maxFragmentLength) throw new Error('Unsupported link.');
+    if (fragment.length > maxFragmentLength) throw new Error('Unsupported link.');
+    if (fragment.startsWith(legacyPrefix)) {
+      const parts = fragment.slice(legacyPrefix.length).split('.');
+      if (parts.length !== 2) throw new Error('Invalid legacy link.');
+      return { iv: decode(parts[0], 12), ciphertext: decode(parts[1], tagBytes + 1, byteLimit + tagBytes), expiresAt: null };
+    }
+    if (!fragment.startsWith(fragmentPrefix)) throw new Error('Unsupported link.');
     const parts = fragment.slice(fragmentPrefix.length).split('.');
-    if (parts.length !== 2) throw new Error('Invalid link.');
-    return { iv: decode(parts[0], 12), ciphertext: decode(parts[1], tagBytes + 1, byteLimit + tagBytes) };
+    if (parts.length !== 3 || !/^[1-9]\d{12}$/.test(parts[0])) throw new Error('Invalid link.');
+    return {
+      expiresAt: Number(parts[0]),
+      iv: decode(parts[1], 12),
+      ciphertext: decode(parts[2], tagBytes + deadlineBytes + 1, byteLimit + deadlineBytes + tagBytes),
+    };
   } catch {
     throw new Error('Paste the full encrypted link you received.');
   }
@@ -340,7 +374,7 @@ function showError(id, message = '') {
 
 function fillFromFragment() {
   const fragment = location.hash;
-  if (!fragment.startsWith(fragmentPrefix)) return;
+  if (!fragment.startsWith(fragmentPrefix) && !fragment.startsWith(legacyPrefix)) return;
   const cleanUrl = new URL(location.href);
   cleanUrl.hash = '';
   history.replaceState(null, '', cleanUrl.href);
@@ -351,8 +385,9 @@ function fillFromFragment() {
   showError('check-error');
   selectTab(tabs[1]);
   try {
-    readLink(fragment);
+    const { expiresAt } = readLink(fragment);
     $('received-link').value = fragment;
+    checkExpiry(expiresAt);
   } catch (error) {
     showError('check-error', error.message);
   }
@@ -374,7 +409,7 @@ function updateCount() {
 }
 $('secret').addEventListener('input', updateCount);
 
-function showSharingOptions(fragment, shareKey) {
+function showSharingOptions(fragment, shareKey, expiresAt) {
   if (location.protocol === 'file:') {
     $('share-link').value = fragment;
     $('share-link-note').textContent = 'Paste this encrypted value into Check Secrets to try the local preview.';
@@ -387,6 +422,7 @@ function showSharingOptions(fragment, shareKey) {
     }
   }
   $('share-key').value = shareKey;
+  $('share-expiry').textContent = 'Expires in the portal on ' + expiryFormat.format(expiresAt) + ' IST.';
 }
 
 sendForm.addEventListener('submit', async (event) => {
@@ -398,17 +434,24 @@ sendForm.addEventListener('submit', async (event) => {
   const version = viewVersion;
   const plaintext = encoder.encode($('secret').value);
   let rawKey;
+  let sealedPayload;
 
   try {
     if (plaintext.length < 1 || plaintext.length > byteLimit) throw new Error('Enter a secret of 1 to 1,024 bytes.');
+    const duration = Number($('expiry-duration').value);
+    if (!durations.has(duration)) throw new Error('Select a valid expiry duration.');
+    const expiresAt = Date.now() + duration * 60_000;
+    sealedPayload = new Uint8Array(deadlineBytes + plaintext.length);
+    new DataView(sealedPayload.buffer).setBigUint64(0, BigInt(expiresAt));
+    sealedPayload.set(plaintext, deadlineBytes);
     const crypto = browserCrypto();
     rawKey = crypto.getRandomValues(new Uint8Array(32));
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const key = await crypto.subtle.importKey('raw', rawKey, 'AES-GCM', false, ['encrypt']);
-    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+    const ciphertext = await crypto.subtle.encrypt(encryptionParams(iv, expiresAt), key, sealedPayload);
     if (version !== viewVersion) return;
-    const fragment = fragmentPrefix + encode(iv) + '.' + encode(new Uint8Array(ciphertext));
-    showSharingOptions(fragment, encode(rawKey));
+    const fragment = fragmentPrefix + expiresAt + '.' + encode(iv) + '.' + encode(new Uint8Array(ciphertext));
+    showSharingOptions(fragment, encode(rawKey), expiresAt);
     $('secret').value = '';
     updateCount();
     sendForm.hidden = true;
@@ -418,6 +461,7 @@ sendForm.addEventListener('submit', async (event) => {
     if (version === viewVersion) showError('send-error', error.message);
   } finally {
     plaintext.fill(0);
+    sealedPayload?.fill(0);
     rawKey?.fill(0);
     button.disabled = false;
   }
@@ -434,17 +478,26 @@ checkForm.addEventListener('submit', async (event) => {
   let plaintext;
 
   try {
-    const { iv, ciphertext } = readLink($('received-link').value);
+    const { iv, ciphertext, expiresAt } = readLink($('received-link').value);
+    checkExpiry(expiresAt);
     rawKey = readKey($('received-key').value);
     const { subtle } = browserCrypto();
     const key = await subtle.importKey('raw', rawKey, 'AES-GCM', false, ['decrypt']);
+    let decoded;
     try {
-      plaintext = new Uint8Array(await subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext));
+      plaintext = new Uint8Array(await subtle.decrypt(encryptionParams(iv, expiresAt), key, ciphertext));
       if (version !== viewVersion) return;
-      $('revealed').value = decoder.decode(plaintext);
+      if (expiresAt !== null && new DataView(plaintext.buffer).getBigUint64(0) !== BigInt(expiresAt)) {
+        throw new Error('Expiry mismatch.');
+      }
+      decoded = decoder.decode(expiresAt === null ? plaintext : plaintext.subarray(deadlineBytes));
     } catch {
       throw new Error('The link could not be decrypted. Check that the key matches the link.');
     }
+    checkExpiry(expiresAt);
+    $('revealed').value = decoded;
+    $('reveal-expiry').textContent = expiresAt === null ? 'This older link has no expiry.' : '';
+    $('reveal-expiry').hidden = expiresAt !== null;
     $('received-link').value = '';
     $('received-key').value = '';
     checkForm.hidden = true;
@@ -462,6 +515,7 @@ checkForm.addEventListener('submit', async (event) => {
 function resetSend() {
   $('share-link').value = '';
   $('share-key').value = '';
+  $('share-expiry').textContent = '';
   setKeyVisibility(false);
   $('send-result').hidden = true;
   sendForm.hidden = false;
@@ -479,6 +533,7 @@ $('toggle-share-key').addEventListener('click', () => {
 
 function resetCheck() {
   $('revealed').value = '';
+  $('reveal-expiry').hidden = true;
   $('check-result').hidden = true;
   checkForm.hidden = false;
 }
